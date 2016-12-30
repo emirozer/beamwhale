@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <string.h>
+
+#define ROOT "root"
 
 const char *getUserName()
 {
@@ -17,20 +20,20 @@ const char *getUserName()
 }
 
 
-static ERL_NIF_TERM is_user_root(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM get_user(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    if (strcmp(getUserName(), "root") == 0)
+    if (strcmp(getUserName(), ROOT) == 0)
     {
-        return enif_make_int(env, 1);
+        return enif_make_string(env, ROOT,ERL_NIF_LATIN1);
     } else {
-        return enif_make_int(env, 0);
+        return enif_make_string(env, getUserName(),ERL_NIF_LATIN1);
     }
     
 }
 
 static ErlNifFunc nif_funcs[] =
 {
-    {"is_user_root", 0, is_user_root}
+    {"get_user", 0, get_user}
 };
 
 ERL_NIF_INIT(posix,nif_funcs,NULL,NULL,NULL,NULL)

@@ -1,9 +1,9 @@
 -module(posix).
 -on_load(load_posix/0).
 
--export([is_user_root/0]).
+-export([get_user/0]).
 
-is_user_root() ->
+get_user() ->
     "NIF library not loaded".
 
 load_posix() ->

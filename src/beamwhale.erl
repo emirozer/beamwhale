@@ -3,7 +3,7 @@
 
 
 %% API exports
--export([]).
+-export([determine_beamwhale_dir/0]).
 
 %%====================================================================
 %% API functions
@@ -15,9 +15,17 @@
 %%====================================================================
 
 determine_beamwhale_dir() ->
-    case posix:is_user_root() of
-        1 ->
+    CurrentUser = posix:get_user(),
+    if
+        CurrentUser == "root" ->
             "/var/lib/beamwhale";
-        0 ->
-            "~/.beamwhale"
+        true ->
+            "/home/" ++ posix:get_user() ++ "/.beamwhale"
     end.
+
+
+make_beamwhale_dir() ->
+    file:make_dir(determine_beamwhale_dir()).
+
+container_dir_name(name) ->
+    true.
