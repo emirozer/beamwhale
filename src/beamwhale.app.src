@@ -4,12 +4,14 @@
   {registered, []},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    lager,
+    uuid
    ]},
   {env,[]},
   {modules, []},
 
-  {maintainers, []},
+  {maintainers, ["emirozer"]},
   {licenses, []},
   {links, []}
  ]}.

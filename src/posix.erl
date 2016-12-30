@@ -7,4 +7,4 @@ get_user() ->
     "NIF library not loaded".
 
 load_posix() ->
-    erlang:load_nif("./posix", 0).
+    erlang:load_nif("./src/posix", 0).
