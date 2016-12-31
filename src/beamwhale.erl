@@ -22,7 +22,7 @@ determine_beamwhale_dir() ->
         CurrentUser == "" ->
             "/tmp/beamwhale";
         true ->
-            "/home/" ++ posix:get_user() ++ "/.beamwhale"
+            "/home/" ++ CurrentUser ++ "/.beamwhale"
     end.
 
 make_beamwhale_dir() ->

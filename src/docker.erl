@@ -9,8 +9,9 @@
 -define(BEAMWHALE_DIR, beamwhale:determine_beamwhale_dir()).
 
 pull(Name, Tag) ->
-    true;
-pull(Name, _) ->
+    true.
+
+pull(Name) ->
     true.
 
 
@@ -27,8 +28,8 @@ untar_layer(Id, Rootdir) ->
     true.
 
 get_id(Name, Tag)->
-    true;
-get_id(Name, _) ->
+    true.
+get_id(Name) ->
     true.
 
 get_ancestry(Id)->
