@@ -27,26 +27,28 @@ save_layer(Id) ->
 untar_layer(Id, Rootdir) ->
     true.
 
-get_id(Name, Tag)->
-    true.
-get_id(Name) ->
-    true.
+get_id(Name, Token, Tag)->
+    h_get("/repositories/"+ Name +"/tags/" ++ Tag, Token).
+get_id(Name, Token) ->
+    h_get("/repositories/"+ Name +"/tags/latest", Token).
 
-get_ancestry(Id)->
-    true.
+get_ancestry(Id, Token)->
+    h_get("/images/" ++ Id ++ "/ancestry", Token).
 
 get_tags(Name, Token)->
-    Response = httpc:request(get,
-                             {?DOCKER_REGISTRY ++ "/repositories/" ++ Name ++ "/tags", 
-                              [{"Authorization", "Token" ++ Token}]}, [], []).
+    httpc:request(get,
+                  {?DOCKER_REGISTRY ++ "/repositories/" ++ Name ++ "/tags", 
+                   [{"Authorization", "Token" ++ Token}]}, [], []).
 
-h_get(Endpoint) ->
-    true.
+h_get(Endpoint, Token) ->
+    httpc:request(get,
+                  {?DOCKER_REGISTRY ++ Endpoint, 
+                   [{"Authorization", "Token" ++ Token}]}, [], []).
 
 h_request_auth(Url, Token) ->
-    Response = httpc:request(get,
-                             {Url, 
-                              [{"Authorization", "Token" ++ Token}]}, [], []).
+    httpc:request(get,
+                  {Url, 
+                   [{"Authorization", "Token" ++ Token}]}, [], []).
     
 
 h_get_token(Name)->
