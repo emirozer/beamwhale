@@ -22,10 +22,11 @@ image_dir_name(Id) ->
     ?BEAMWHALE_DIR ++ "/images/" ++ Id.
 
 save_layer(Id) ->
-    true.
+    Filename = layer_filename(Id),
+    ChunkSize = 16 * 1024.
 
 untar_layer(Id, Rootdir) ->
-    true.
+    erl_tar:extract(layer_filename(Id), {cwd, Rootdir}).
 
 get_id(Name, Token, Tag)->
     h_get("/repositories/"+ Name +"/tags/" ++ Tag, Token).
