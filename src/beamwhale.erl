@@ -5,6 +5,7 @@
 %% API exports
 -export([determine_beamwhale_dir/0, container_dir_name/1]).
 
+-define(BEAMWHALE_DIR, determine_beamwhale_dir()).
 %%====================================================================
 %% API functions
 %%====================================================================
