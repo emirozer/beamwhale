@@ -57,27 +57,19 @@ image_dir_name(Id) ->
 save_layer(Id, Name) ->
     Endpoint = "/images/" ++ Id ++ "layer",
     DockerAuth = h_get_docker_auth(Name),
-    h_request_auth(?DOCKER_REGISTRY ++ Endpoint, DockerAuth, [{stream, layer_filename(Id)}]).
+    h_get(Endpoint, DockerAuth, [{stream, layer_filename(Id)}]).
 
 untar_layer(Id, Rootdir) ->
     erl_tar:extract(layer_filename(Id), {cwd, Rootdir}).
 
 get_image_manifest(Name, DockerAuth, Tag) ->
-    h_get(Name ++"/manifests/" ++ Tag, DockerAuth).
+    h_get(Name ++"/manifests/" ++ Tag, DockerAuth, []).
 
-h_get(Endpoint, DockerAuth) ->
+h_get(Endpoint, DockerAuth, Options) ->
     lager:info("HTTP GET: ~p", [?DOCKER_REGISTRY ++ Endpoint]),
     httpc:request(get,
                   {?DOCKER_REGISTRY ++ Endpoint, 
-                   [{"Authorization", "Bearer " ++ binary_to_list(DockerAuth#docker_auth.token)}, {"Accept", ?DOCKER_REGISTRY_MANIFEST_SCHEME}]}, [], []).
-
-h_request_auth(Url, DockerAuth) ->
-    h_request_auth(Url, DockerAuth, []).
-h_request_auth(Url, DockerAuth, Options) ->
-    httpc:request(get,
-                  {Url, 
-                   [{"Authorization", "Bearer " ++ binary_to_list(DockerAuth#docker_auth.token)}]}, [], Options).
-    
+                   [{"Authorization", "Bearer " ++ binary_to_list(DockerAuth#docker_auth.token)}, {"Accept", ?DOCKER_REGISTRY_MANIFEST_SCHEME}]}, [], Options).
 
 h_get_docker_auth(Name)->    
     Url = ?DOCKER_AUTH_API ++":" ++ Name ++":pull",
