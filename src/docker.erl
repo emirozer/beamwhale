@@ -48,7 +48,8 @@ retrieve_image(Name, Tag, ManifestResponse, DockerAuth) ->
     filelib:ensure_dir(image_dir_name(Identifier)),
     Layers = maps:get(<<"layers">>, ManifestResponseMap),
     lists:foreach(fun(Layer) -> save_layer(Identifier, Name, DockerAuth,maps:get(<<"digest">>, Layer)) end, Layers),
-    untar_layer(Identifier, image_dir_name(Identifier)).
+    untar_layer(Identifier, image_dir_name(Identifier)),
+    {ok, image_dir_name(Identifier)}.
 
 layer_filename(Id) ->
     ?BEAMWHALE_DIR ++ "/layers/" ++ Id ++ ".tar.gz".
