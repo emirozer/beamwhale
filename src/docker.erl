@@ -12,6 +12,7 @@
 -define(BEAMWHALE_DIR, beamwhale:determine_beamwhale_dir()).
 
 -record(docker_auth, {access_token, expires_in, issued_at, token}).
+
 %%====================================================================
 %% API functions
 %%====================================================================
@@ -22,9 +23,7 @@ pull(Name, Tag) ->
     ManifestResponseCode = response_http_status(ManifestResponse),
     if
         ManifestResponseCode =/= 200 -> lager:error("Could not retrieve the manifest of the image you are looking for: ~p", [ManifestResponseCode]);
-        true ->  retrieve_image(jsx:decode(
-                                  list_to_binary(
-                                             response_body(ManifestResponse)), [return_maps]))
+        true ->  retrieve_image(Name, Tag, list_to_binary(response_body(ManifestResponse)), DockerAuth)
     end.
 
 pull(Name) ->
@@ -41,26 +40,28 @@ get_tags(Name)->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-retrieve_image(ManifestResponseMap) ->
+retrieve_image(Name, Tag, ManifestResponse, DockerAuth) ->    
+    ManifestResponseMap = jsx:decode( ManifestResponse, [return_maps]),
     lager:info("Manifest for the image: ~p", [ManifestResponseMap]),
-    %%filelib:ensure_dir(image_dir_name(Id)),
-    %%Layers = get_ancestry(Id, DockerAuth),
-    %%lager:info("Received ancestry : ~p", [Layers]),
-    true.
-    
+    Identifier = re:replace(Name ++ "-" ++ Tag, "/","-",[global,{return,list}]),
+    lager:info("Identifier for this image: ~p", [Identifier]),
+    filelib:ensure_dir(image_dir_name(Identifier)),
+    Layers = maps:get(<<"layers">>, ManifestResponseMap),
+    lists:foreach(fun(Layer) -> save_layer(Identifier, Name, DockerAuth,maps:get(<<"digest">>, Layer)) end, Layers),
+    untar_layer(Identifier, image_dir_name(Identifier)).
+
 layer_filename(Id) ->
-    ?BEAMWHALE_DIR ++ "/layers/" ++ Id ++ ".tar".
+    ?BEAMWHALE_DIR ++ "/layers/" ++ Id ++ ".tar.gz".
 
 image_dir_name(Id) ->
-    ?BEAMWHALE_DIR ++ "/images/" ++ Id.
+    ?BEAMWHALE_DIR ++ "/images/" ++ Id ++ "/".
 
-save_layer(Id, Name) ->
-    Endpoint = "/images/" ++ Id ++ "layer",
-    DockerAuth = h_get_docker_auth(Name),
+save_layer(Id, Name, DockerAuth, Digest) ->
+    Endpoint = Name ++ "/blobs/" ++ binary_to_list(Digest),
     h_get(Endpoint, DockerAuth, [{stream, layer_filename(Id)}]).
 
 untar_layer(Id, Rootdir) ->
-    erl_tar:extract(layer_filename(Id), {cwd, Rootdir}).
+    erl_tar:extract(layer_filename(Id), [compressed, {cwd, Rootdir}]).
 
 get_image_manifest(Name, DockerAuth, Tag) ->
     h_get(Name ++"/manifests/" ++ Tag, DockerAuth, []).
@@ -69,7 +70,8 @@ h_get(Endpoint, DockerAuth, Options) ->
     lager:info("HTTP GET: ~p", [?DOCKER_REGISTRY ++ Endpoint]),
     httpc:request(get,
                   {?DOCKER_REGISTRY ++ Endpoint, 
-                   [{"Authorization", "Bearer " ++ binary_to_list(DockerAuth#docker_auth.token)}, {"Accept", ?DOCKER_REGISTRY_MANIFEST_SCHEME}]}, [], Options).
+                   [{"Authorization", "Bearer " ++ binary_to_list(DockerAuth#docker_auth.token)}, 
+                    {"Accept", ?DOCKER_REGISTRY_MANIFEST_SCHEME}]}, [], Options).
 
 h_get_docker_auth(Name)->    
     Url = ?DOCKER_AUTH_API ++":" ++ Name ++":pull",
