@@ -33,6 +33,20 @@ static ERL_NIF_TERM get_user(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     
 }
 
+static ERL_NIF_TERM get_group_id(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, getegid());
+}
+
+static ERL_NIF_TERM syscall_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int syscall_code;
+    int flags;
+    enif_get_int(env, argv[0], &syscall_code);
+    enif_get_int(env, argv[1], &flags);
+    return enif_make_int(env, syscall(syscall_code, flags));
+}
+
 static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int r = 0;
@@ -102,11 +116,13 @@ static ERL_NIF_TERM exit_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 static ErlNifFunc nif_funcs[] =
 {
     {"get_user", 0, get_user},
+    {"get_group_id", 0, get_group_id},
     {"mount_libc", 5, mount_libc},
     {"umount_libc", 1, umount_libc},
     {"fork_libc", 0, fork_libc},
     {"waitpid_libc", 2, waitpid_libc},
-    {"exit_libc", 1, exit_libc}
+    {"exit_libc", 1, exit_libc},
+    {"syscall_libc", 2, syscall_libc}
 };
 
 ERL_NIF_INIT(posix,nif_funcs,NULL,NULL,NULL,NULL)

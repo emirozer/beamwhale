@@ -3,7 +3,7 @@
 -on_load(make_beamwhale/0).
 
 %% API exports
--export([start_container/3, get_tags/1]).
+-export([start_container/3, pull/1, pull/2, get_tags/1]).
 
 -define(BEAMWHALE_DIR, determine_beamwhale_dir()).
 
@@ -27,7 +27,13 @@ start_container(Name, Tag, Options) ->
         %% otherwise we have to do a copy op on the base image
         true -> b_root_copy_base_image(ImageDir, Rootfs)
     end.
-    
+
+pull(Name, Tag) ->
+    docker:pull(Name, Tag).
+
+pull(Name) ->
+    docker:pull(Name).
+
 get_tags(Name) ->
     docker:get_tags(Name).
 %%====================================================================
@@ -79,3 +85,6 @@ mount_image_overlay(ImageDir, ContainerDir, Rootfs) ->
 
 mount(Source, Target, Fs, Flags, Options) ->
     posix:mount_libc(Source, Target, Fs, Flags, Options).
+
+unshare(Flags) ->
+    posix:syscall_libc(linux:sys_unshare(), Flags).
