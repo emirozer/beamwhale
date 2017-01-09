@@ -66,17 +66,47 @@ static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     
 }
 
+
+static ERL_NIF_TERM umount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    char mountpoint;
+    enif_get_string(env, argv[0], &mountpoint, MAXBUFLEN, ERL_NIF_LATIN1);
+    int code = umount(&mountpoint);
+    return enif_make_int(env, code);
+}
+
 static ERL_NIF_TERM fork_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int pid = fork();
     return enif_make_int(env, pid);
 }
 
+
+static ERL_NIF_TERM waitpid_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int current;
+    int expected;
+    enif_get_int(env, argv[0], &current);
+    enif_get_int(env, argv[1], &expected);
+    waitpid(current, expected, 0);
+}
+
+
+static ERL_NIF_TERM exit_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int code;
+    enif_get_int(env, argv[0], &code);
+    exit(code);
+}
+
 static ErlNifFunc nif_funcs[] =
 {
     {"get_user", 0, get_user},
     {"mount_libc", 5, mount_libc},
-    {"fork_libc", 0, fork_libc}
+    {"umount_libc", 1, umount_libc},
+    {"fork_libc", 0, fork_libc},
+    {"waitpid_libc", 2, waitpid_libc},
+    {"exit_libc", 1, exit_libc}
 };
 
 ERL_NIF_INIT(posix,nif_funcs,NULL,NULL,NULL,NULL)

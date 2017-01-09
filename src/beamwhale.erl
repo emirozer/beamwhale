@@ -57,8 +57,15 @@ container_dir_name(Name) ->
 b_root_overlay(ImageDir, ContainerDir, Rootfs) ->
     OverlayMountpoint = mount_image_overlay(ImageDir, ContainerDir, Rootfs),
     OverlayPid = posix:fork_libc(),
-    true.
+    if 
+        OverlayPid =/= 0 -> prep_root_overlay(OverlayPid, OverlayMountpoint)
+    end.
 
+prep_root_overlay(OverlayPid, OverlayMountpoint) ->
+    posix:waitpid_libc(OverlayPid, 0),
+    posix:umount_libc(OverlayMountpoint),
+    posix:exit_libc(0).
+    
 b_root_copy_base_image(ImageDir, Rootfs) ->
     file:copy(ImageDir, Rootfs).
 
