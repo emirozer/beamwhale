@@ -113,6 +113,22 @@ static ERL_NIF_TERM exit_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     exit(code);
 }
 
+
+static ERL_NIF_TERM get_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_int(env, getpid());
+}
+
+
+static ERL_NIF_TERM set_hostname(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    char hostname;
+    enif_get_string(env, argv[0], &hostname, MAXBUFLEN, ERL_NIF_LATIN1);
+    int code = sethostname(hostname);
+    return enif_make_int(env, code);
+}
+
+
 static ErlNifFunc nif_funcs[] =
 {
     {"get_user", 0, get_user},
@@ -122,7 +138,9 @@ static ErlNifFunc nif_funcs[] =
     {"fork_libc", 0, fork_libc},
     {"waitpid_libc", 2, waitpid_libc},
     {"exit_libc", 1, exit_libc},
-    {"syscall_libc", 2, syscall_libc}
+    {"syscall_libc", 2, syscall_libc},
+    {"get_pid", 0, get_pid},
+    {"set_hostname", 1, set_hostname}
 };
 
 ERL_NIF_INIT(posix,nif_funcs,NULL,NULL,NULL,NULL)
