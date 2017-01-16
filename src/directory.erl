@@ -1,5 +1,5 @@
 -module(directory).
--export([del_dir/1]).
+-export([del_dir/1, traverse/1]).
 
 del_dir(Dir) ->
     lists:foreach(fun(D) ->
@@ -23,3 +23,22 @@ del_all_files([Dir | T], EmptyDirs) ->
                           ok = file:delete(F)
                   end, Files),
     del_all_files(T ++ Dirs, [Dir | EmptyDirs]).
+
+traverse(Dir) ->
+    {ok, Cwd} = file:get_cwd(),
+    case file:set_cwd(Dir) of
+        ok ->
+            {ok, Filenames} = file:list_dir("."),
+            F = fun(Name) ->
+                        case filelib:is_dir(Name) of
+                            true  -> traverse(Name);
+                            false -> traverse_process(Name)
+                        end
+                end,
+            lists:foreach(F, Filenames);
+        {error, Reason} ->
+            io:format("~p error reason : ~s~n", [Dir, Reason])
+    end,
+    file:set_cwd(Cwd).
+
+traverse_process(Name) -> io:format("~s~n", [Name]).
