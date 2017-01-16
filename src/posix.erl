@@ -26,7 +26,7 @@ umount_libc(Mountpoint) ->
 fork_libc() ->
     "NIF library posix not loaded".
 
-waitpid_libc(OverlayPid, OverlayMountpoint) ->
+waitpid_libc(Pid, Expectation) ->
     "NIF library posix not loaded".
 
 exit_libc(Code) ->

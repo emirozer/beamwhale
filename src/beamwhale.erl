@@ -3,7 +3,7 @@
 -on_load(make_beamwhale/0).
 
 %% API exports
--export([start_container/3, pull/1, pull/2, get_tags/1]).
+-export([start_container/5, pull/1, pull/2, get_tags/1]).
 
 -define(BEAMWHALE_DIR, determine_beamwhale_dir()).
 -define(NULL, "NULL").
@@ -13,7 +13,7 @@
 
 %% Options expected as a list, you can provide the following atoms
 %% enable_overlay  -- uses overlayfs to build rootfs
-start_container(Name, Tag, Options) ->
+start_container(Name, Tag, Command, Args, Options) ->
     {ok, ImageDir} = docker:pull(Name, Tag),
     {Dirname, ContainerDir} = container_dir_name(Name),
     Rootfs = ContainerDir ++ "/root/",
@@ -37,10 +37,22 @@ start_container(Name, Tag, Options) ->
     setgroups_write(undefined),
     map_user(0, UserId, 1, undefined),
     map_group(0, GroupId, 1, undefined),
-    posix:set_hostname(Dirname).
+    posix:set_hostname(Dirname),
     
-
-
+    PID = posix:fork_libc(),
+    if
+        PID == 0 -> do_task(Rootfs, Command, Args);
+        PID =/= 0 -> wait_and_do_task(PID, Rootfs, Command, Args)
+    end.
+            
+wait_and_do_task(PID, Rootfs, Command, Args) ->
+    posix:waitpid_libc(PID, 0),
+    do_task(Rootfs, Command, Args).
+    
+do_task(Rootfs, Command, Args) ->
+    setup_fs(Rootfs),
+    posix:exec(Command, Args).
+    
 pull(Name, Tag) ->
     docker:pull(Name, Tag).
 
@@ -134,4 +146,67 @@ map_group(IdInsideNs, IdOutsideNs, Length, PID) ->
         true -> 
             file:write_file("/proc/" ++ PID ++ "/gid_map", [Payload])
     end.
+
+pivot_root(Rootfs) ->
+    mount(Rootfs, Rootfs, "bind", linux:ms_bind() bor linux:ms_rec(), ?NULL),
+    OldRoot = Rootfs ++ "/.old_root",
+    filelib:ensure_dir(OldRoot),
+    poxis:pivot(Rootfs, OldRoot),
+    c:cd("/"),
+    "/" ++ ".old_root".
+
+bind_dev_nodes(OldRoot) ->
+    Devices = [
+      'dev/tty',
+      'dev/null',
+      'dev/zero',
+      'dev/random',
+      'dev/urandom',
+      'dev/full'
+     ],
+    lists:foreach(fun(X) -> bind_device(X, OldRoot) end, Devices).
+
+bind_device(Device, OldRoot) ->
+    NewDevice = "/" ++ Device,
+    HostDevice = OldRoot ++ "/" ++ Device,
+    IsFile = filelib:is_file(NewDevice),
+    if
+        IsFile -> file:delete(NewDevice)
+    end,
+    mount(HostDevice, NewDevice, 'bind', linux:ms_bind(), ?NULL).
+
+symlink_many(Mapping) ->
+    maps:fold(
+      fun(K, V, ok) ->
+              io:format("~p: ~p~n", [K, V])
+      end, ok, Mapping).
+
+setup_fs(Rootfs) ->
+    OldRoot = pivot_root(Rootfs),
+
+    %% need to mount a /proc filesystem in the namespace, if not the tools like ps and top will read
+    %% from global /proc
+    mount("/proc", "/proc", "proc", linux:ms_mgc_val(), ?NULL),
+
+    %% mount a /tmpfs on /dev
+    mount("/tmpfs", "/dev", "tmpfs", linux:ms_nosuid() bor linux:ms_strictatime(), ?NULL),
+    
+    bind_dev_nodes(OldRoot),
+
+    %% https://www.kernel.org/doc/Documentation/filesystems/devpts.txt
+    filelib:ensure_dir("/dev/pts"),
+    mount("devpts", "/dev/pts", "devpts", linux:ms_noexec() bor linux:ms_nosuid(), "newinstance,ptmxmode=0666,mode=620"),
+
+    Mapping = #{"/dev/pts/ptmx" => "/dev/ptmx", "/proc/self/fd" => "/dev/fd",
+                "/proc/self/fd/0" => "/dev/stdin", "/proc/self/fd/1" => "/dev/stdout",
+                "/proc/self/fd/2" => "/dev/stderr"},
+    symlink_many(Mapping),
+
+    % mount kernel /sys interface
+    mount("sysfs", "/sys", "sysfs", linux:ms_rdonly() bor linux:ms_nosuid() bor
+              linux:ms_noexec() bor linux:ms_nodev(), ?NULL),
+
+   % unmount old root.
+    posix:umount_libc(OldRoot),
+    directory:del_dir(OldRoot).
 
