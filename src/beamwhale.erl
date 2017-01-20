@@ -23,7 +23,7 @@ start_container(Name, Tag, Command, Args, Options) ->
     OverlayEnabled = lists:member(enable_overlay, Options),
     if
         OverlayEnabled and CurrentUser == "root" -> b_root_overlay(ImageDir, ContainerDir, Rootfs);
-        OverlayEnabled and CurrentUser =/= "root" ->throw({error, root_priviliges_required_for_overlayfs});
+        OverlayEnabled and CurrentUser =/= "root" -> throw({error, root_priviliges_required_for_overlayfs});
         %% otherwise we have to do a copy op on the base image
         true -> b_root_copy_base_image(ImageDir, Rootfs)
     end,
@@ -98,7 +98,7 @@ prep_root_overlay(OverlayPid, OverlayMountpoint) ->
     posix:exit_libc(0).
     
 b_root_copy_base_image(ImageDir, Rootfs) ->
-    file:copy(ImageDir, Rootfs).
+    os:cmd("cp -R " ++ ImageDir ++ " " ++ Rootfs).
 
 mount_image_overlay(ImageDir, ContainerDir, Rootfs) ->
         Overlay = ContainerDir ++ "/overlay/",
@@ -178,7 +178,7 @@ bind_device(Device, OldRoot) ->
 symlink_many(Mapping) ->
     maps:fold(
       fun(K, V, ok) ->
-              io:format("~p: ~p~n", [K, V])
+              os:cmd("ln -s " ++ K ++ " " ++ V)
       end, ok, Mapping).
 
 setup_fs(Rootfs) ->
