@@ -3,7 +3,8 @@
 
 -export([get_user/0, mount_libc/5, umount_libc/1,
          fork_libc/0, waitpid_libc/2, exit_libc/1,
-        get_pid/0, set_hostname/1, get_group_id/0]).
+        get_pid/0, set_hostname/1, get_group_id/0,
+        syscall_libc/2]).
 
 get_pid() ->
     "NIF library posix not loaded".

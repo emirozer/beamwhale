@@ -18,6 +18,7 @@
 %%====================================================================
 pull(Name, Tag) ->
     lager:info("Pulling image name : ~p, with tag: ~p", [Name, Tag]),
+    filelib:ensure_dir(layer_dir()),
     DockerAuth = h_get_docker_auth(Name),
     ManifestResponse = get_image_manifest(Name, DockerAuth, Tag),
     ManifestResponseCode = response_http_status(ManifestResponse),
@@ -53,6 +54,9 @@ retrieve_image(Name, Tag, ManifestResponse, DockerAuth) ->
 
 layer_filename(Id) ->
     ?BEAMWHALE_DIR ++ "/layers/" ++ Id ++ ".tar.gz".
+
+layer_dir() ->
+    ?BEAMWHALE_DIR ++ "/layers/".
 
 image_dir_name(Id) ->
     ?BEAMWHALE_DIR ++ "/images/" ++ Id ++ "/".

@@ -3,7 +3,8 @@
 -on_load(make_beamwhale/0).
 
 %% API exports
--export([start_container/5, pull/1, pull/2, get_tags/1]).
+-export([start_container/5, pull/1, pull/2, get_tags/1,
+         determine_beamwhale_dir/0]).
 
 -define(BEAMWHALE_DIR, determine_beamwhale_dir()).
 -define(NULL, "NULL").
@@ -29,7 +30,7 @@ start_container(Name, Tag, Command, Args, Options) ->
     end,
     UserId = posix:get_user(),
     GroupId = posix:get_group_id(),
-    
+    lager:info("UserId : ~p  & GroupId: ~p", [UserId, GroupId]),
     unshare(linux:clone_newpid() bor linux:clone_newnet() bor linux:clone_newns() bor
            linux:clone_newuts() bor linux:clone_newcgroup() bor linux:clone_newipc() bor
                 linux:clone_newuser()),
