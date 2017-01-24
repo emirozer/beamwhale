@@ -125,27 +125,41 @@ set_mount_propogation() ->
 setgroups_write(PID) ->
     if 
         PID == undefined ->
-            file:write_file("/proc/" ++ posix:get_pid() ++ "/setgroups", ["deny"]);            
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/setgroups", [posix:get_pid()])), ["deny"]);            
         true -> 
-            file:write_file("/proc/" ++ PID ++ "/setgroups", ["deny"])
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/setgroups", [PID])), ["deny"])
     end.
 
 map_user(IdInsideNs, IdOutsideNs, Length, PID) ->
-    Payload = IdInsideNs ++ " " ++ IdOutsideNs ++ " " ++ Length,
+    Payload = lists:flatten(io_lib:format("~B "++IdOutsideNs++" ~B", [IdInsideNs, Length])),
+    lager:info("map_user Payload: ~p",[Payload]),
     if 
         PID == undefined ->
-            file:write_file("/proc/" ++ posix:get_pid() ++ "/uid_map", [Payload]);
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/uid_map", [posix:get_pid()])), [Payload]);
         true -> 
-            file:write_file("/proc/" ++ PID ++ "/uid_map", [Payload])
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/uid_map", [PID])), [Payload])
     end.
     
 map_group(IdInsideNs, IdOutsideNs, Length, PID) ->
-    Payload = IdInsideNs ++ " " ++ IdOutsideNs ++ " " ++ Length,
+    Payload = lists:flatten(io_lib:format("~B ~B ~B", [IdInsideNs,IdOutsideNs, Length])),
+    lager:info("map_group Payload: ~p",[Payload]),
     if 
         PID == undefined ->
-            file:write_file("/proc/" ++ posix:get_pid() ++ "/gid_map", [Payload]);
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/gid_map", [posix:get_pid()])), [Payload]);
         true -> 
-            file:write_file("/proc/" ++ PID ++ "/gid_map", [Payload])
+            file:write_file(
+              lists:flatten(
+                io_lib:format("/proc/~B/gid_map", [PID])), [Payload])
     end.
 
 pivot_root(Rootfs) ->
