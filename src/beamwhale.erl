@@ -23,18 +23,20 @@ start_container(Name, Tag, Command, Args, Options) ->
     CurrentUser = posix:get_user(),
     OverlayEnabled = lists:member(enable_overlay, Options),
     if
-        OverlayEnabled and CurrentUser == "root" -> b_root_overlay(ImageDir, ContainerDir, Rootfs);
-        OverlayEnabled and CurrentUser =/= "root" -> throw({error, root_priviliges_required_for_overlayfs});
+        OverlayEnabled == true andalso CurrentUser == "root" -> b_root_overlay(ImageDir, ContainerDir, Rootfs);
+        OverlayEnabled == true andalso CurrentUser =/= "root" -> throw({error, root_priviliges_required_for_overlayfs});
         %% otherwise we have to do a copy op on the base image
         true -> b_root_copy_base_image(ImageDir, Rootfs)
     end,
     UserId = posix:get_user(),
     GroupId = posix:get_group_id(),
     lager:info("UserId : ~p  & GroupId: ~p", [UserId, GroupId]),
-    unshare(linux:clone_newpid() bor linux:clone_newnet() bor linux:clone_newns() bor
-           linux:clone_newuts() bor linux:clone_newcgroup() bor linux:clone_newipc() bor
-                linux:clone_newuser()),
-    set_mount_propogation(),
+    ResMountPropogation = set_mount_propogation(),
+    lager:info("set_mount_propogation result: ~p", [ResMountPropogation]),
+    ResUnshare= unshare(linux:clone_newpid() bor linux:clone_newnet() bor 
+                            linux:clone_newns() bor linux:clone_newuts() bor linux:clone_newcgroup() bor 
+                            linux:clone_newipc() bor linux:clone_newuser()),
+    lager:info("unshare syscall result: ~p", [ResUnshare]),
     setgroups_write(undefined),
     map_user(0, UserId, 1, undefined),
     map_group(0, GroupId, 1, undefined),
@@ -87,6 +89,7 @@ container_dir_name(Name) ->
     {DirectoryName, determine_beamwhale_dir() ++ "/containers/" ++ DirectoryName}.
 
 b_root_overlay(ImageDir, ContainerDir, Rootfs) ->
+    lager:info("building overlayfs for container"),
     OverlayMountpoint = mount_image_overlay(ImageDir, ContainerDir, Rootfs),
     OverlayPid = posix:fork_libc(),
     if 
