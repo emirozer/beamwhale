@@ -3,8 +3,8 @@
 -on_load(make_beamwhale/0).
 
 %% API exports
--export([start_container/5, pull/1, pull/2, get_tags/1,
-         determine_beamwhale_dir/0]).
+-export([start_container/5, start_container/4, pull/1,
+         pull/2, get_tags/1, determine_beamwhale_dir/0]).
 
 -define(BEAMWHALE_DIR, determine_beamwhale_dir()).
 -define(NULL, "NULL").
@@ -47,7 +47,10 @@ start_container(Name, Tag, Command, Args, Options) ->
         PID == 0 -> do_task(Rootfs, Command, Args);
         PID =/= 0 -> wait_and_do_task(PID, Rootfs, Command, Args)
     end.
-            
+
+start_container(Name, Command, Args, Options) ->
+    start_container(Name, "latest", Command, Args, Options).
+
 wait_and_do_task(PID, Rootfs, Command, Args) ->
     posix:waitpid_libc(PID, 0),
     do_task(Rootfs, Command, Args).
