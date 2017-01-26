@@ -62,17 +62,22 @@ static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     enif_get_int(env, argv[3], &flags);
     enif_get_string(env, argv[4], &options, MAXBUFLEN, ERL_NIF_LATIN1);
     
-    if ((strcmp(&options, "NULL") == 0) && (strcmp(&fs, "NULL") == 0)){
+    if ((strcmp(&options, "NULL") == 0) && (strcmp(&fs, "NULL") == 0))
+    {
         r = mount(&source, &target, NULL, flags, NULL);
-    } else if (strcmp(&fs, "NULL") == 0) {
+    } else if (strcmp(&fs, "NULL") == 0)
+    {
         r = mount(&source, &target, NULL, flags, &options);
-    }else if (strcmp(&options, "NULL") == 0) {
+    } else if (strcmp(&options, "NULL") == 0)
+    {
         r = mount(&source, &target, &fs, flags, NULL);
-    } else {
+    } else
+    {
         r = mount(&source, &target, &fs, flags, &options);
     }
     
-    if (r != 0){
+    if (r != 0)
+    {
         printf("mount failed: %d", r);
     }    
     
