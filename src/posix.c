@@ -44,36 +44,43 @@ static ERL_NIF_TERM syscall_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     int flags;
     enif_get_int(env, argv[0], &syscall_code);
     enif_get_int(env, argv[1], &flags);
-    return enif_make_int(env, syscall(syscall_code, flags));
+    int r = syscall(syscall_code, flags);
+    return enif_make_int(env, r);
 }
 
 static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     int r = 0;
     
-    char source;
-    char target;
-    char fs;
+    char source[MAXBUFLEN];
+    char target[MAXBUFLEN];
+    char fs[MAXBUFLEN];
     int flags;
-    char options;
-    enif_get_string(env, argv[0], &source, MAXBUFLEN, ERL_NIF_LATIN1);
-    enif_get_string(env, argv[1], &target, MAXBUFLEN, ERL_NIF_LATIN1);
-    enif_get_string(env, argv[2], &fs, MAXBUFLEN, ERL_NIF_LATIN1);
-    enif_get_int(env, argv[3], &flags);
-    enif_get_string(env, argv[4], &options, MAXBUFLEN, ERL_NIF_LATIN1);
+    char options[MAXBUFLEN];
     
-    if ((strcmp(&options, "NULL") == 0) && (strcmp(&fs, "NULL") == 0))
+    int r_egs_source = enif_get_string(env, argv[0], source, sizeof(source), ERL_NIF_LATIN1);
+    int r_egs_target = enif_get_string(env, argv[1], target, sizeof(target), ERL_NIF_LATIN1);
+    int r_egs_fs = enif_get_string(env, argv[2], fs, sizeof(fs), ERL_NIF_LATIN1);
+    enif_get_int(env, argv[3], &flags);
+    int r_egs_options = enif_get_string(env, argv[4], options, sizeof(options), ERL_NIF_LATIN1);
+
+    if (r_egs_source < 1 || r_egs_target < 1 || r_egs_fs < 1 || r_egs_options < 1 )
     {
-        r = mount(&source, &target, NULL, flags, NULL);
-    } else if (strcmp(&fs, "NULL") == 0)
+        return enif_make_badarg(env);
+    }
+    
+    if ((strcmp(options, "NULL") == 0) && (strcmp(fs, "NULL") == 0))
     {
-        r = mount(&source, &target, NULL, flags, &options);
-    } else if (strcmp(&options, "NULL") == 0)
+        r = mount(source, target, NULL, flags, NULL);
+    } else if (strcmp(fs, "NULL") == 0)
     {
-        r = mount(&source, &target, &fs, flags, NULL);
+        r = mount(source, target, NULL, flags, options);
+    } else if (strcmp(options, "NULL") == 0)
+    {
+        r = mount(source, target, fs, flags, NULL);
     } else
     {
-        r = mount(&source, &target, &fs, flags, &options);
+        r = mount(source, target, fs, flags, options);
     }
     
     if (r != 0)
@@ -88,9 +95,13 @@ static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
 static ERL_NIF_TERM umount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    char mountpoint;
-    enif_get_string(env, argv[0], &mountpoint, MAXBUFLEN, ERL_NIF_LATIN1);
-    int code = umount(&mountpoint);
+    char mountpoint[MAXBUFLEN];
+    if (enif_get_string(env, argv[0], mountpoint, MAXBUFLEN, ERL_NIF_LATIN1) < 1)
+    {
+        return enif_make_badarg(env);
+    }
+    
+    int code = umount(mountpoint);
     return enif_make_int(env, code);
 }
 
@@ -127,8 +138,11 @@ static ERL_NIF_TERM get_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 static ERL_NIF_TERM set_hostname(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    char hostname;
-    enif_get_string(env, argv[0], &hostname, MAXBUFLEN, ERL_NIF_LATIN1);
+    char hostname[MAXBUFLEN];
+    if (enif_get_string(env, argv[0], hostname, MAXBUFLEN, ERL_NIF_LATIN1) < 1)
+    {
+        return enif_make_badarg(env);
+    }
     int code = sethostname(hostname);
     return enif_make_int(env, code);
 }
