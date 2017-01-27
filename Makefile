@@ -12,7 +12,7 @@ endif
 
 .PHONY: deps test build
 
-all: build test docs
+all: shell
 
 build: $(REBAR3)
 	@$(REBAR3) compile
