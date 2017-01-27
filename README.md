@@ -1,9 +1,1 @@
-beamwhale
-=====
-
-An OTP library
-
-Build
------
-
-    $ rebar3 compile
+# WORK IN PROGRESS - Come back later :)
