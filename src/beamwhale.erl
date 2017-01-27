@@ -57,7 +57,7 @@ wait_and_do_task(PID, Rootfs, Command, Args) ->
     
 do_task(Rootfs, Command, Args) ->
     setup_fs(Rootfs),
-    posix:exec(Command, Args).
+    posix:exec_libc(Command, Args).
     
 pull(Name, Tag) ->
     docker:pull(Name, Tag).
@@ -192,7 +192,8 @@ bind_device(Device, OldRoot) ->
     HostDevice = OldRoot ++ "/" ++ Device,
     IsFile = filelib:is_file(NewDevice),
     if
-        IsFile -> file:delete(NewDevice)
+        IsFile -> file:delete(NewDevice);
+        true -> lager:debug("New device is not a file")
     end,
     mount(HostDevice, NewDevice, 'bind', linux:ms_bind(), ?NULL).
 
