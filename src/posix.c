@@ -135,6 +135,23 @@ static ERL_NIF_TERM get_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     return enif_make_int(env, getpid());
 }
 
+static ERL_NIF_TERM pivot(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    char new_root[MAXBUFLEN];
+    char old_root[MAXBUFLEN];
+    
+    int r_egs_newroot = enif_get_string(env, argv[0], new_root, sizeof(new_root), ERL_NIF_LATIN1);
+    int r_egs_oldroot = enif_get_string(env, argv[1], old_root, sizeof(old_root), ERL_NIF_LATIN1);
+
+    if ( r_egs_newroot < 1 || r_egs_oldroot < 1 )
+    {
+        return enif_make_badarg(env);
+    }
+    
+    int code = pivot_root(new_root, old_root);
+    return enif_make_int(env, code);
+}
+
 
 static ERL_NIF_TERM set_hostname(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -159,6 +176,7 @@ static ErlNifFunc nif_funcs[] =
     {"exit_libc", 1, exit_libc},
     {"syscall_libc", 2, syscall_libc},
     {"get_pid", 0, get_pid},
+    {"pivot", 2, pivot},
     {"set_hostname", 1, set_hostname}
 };
 

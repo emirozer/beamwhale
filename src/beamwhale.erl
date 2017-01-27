@@ -172,7 +172,7 @@ pivot_root(Rootfs) ->
     mount(Rootfs, Rootfs, "bind", linux:ms_bind() bor linux:ms_rec(), ?NULL),
     OldRoot = Rootfs ++ "/.old_root",
     filelib:ensure_dir(OldRoot),
-    poxis:pivot(Rootfs, OldRoot),
+    posix:pivot(Rootfs, OldRoot),
     c:cd("/"),
     "/" ++ ".old_root".
 
