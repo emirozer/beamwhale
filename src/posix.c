@@ -129,6 +129,14 @@ static ERL_NIF_TERM exit_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     exit(code);
 }
 
+static ERL_NIF_TERM unshare_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    int flags;
+    enif_get_int(env, argv[0], &flags);
+    int code = unshare(flags);
+    return enif_make_int(env, code);
+}
+
 
 static ERL_NIF_TERM get_pid(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -191,6 +199,7 @@ static ErlNifFunc nif_funcs[] =
     {"fork_libc", 0, fork_libc},
     {"waitpid_libc", 2, waitpid_libc},
     {"exit_libc", 1, exit_libc},
+    {"unshare_libc", 1, unshare_libc},
     {"syscall_libc", 2, syscall_libc},
     {"get_pid", 0, get_pid},
     {"pivot", 2, pivot},

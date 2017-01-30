@@ -119,7 +119,7 @@ mount(Source, Target, Fs, Flags, Options) ->
     posix:mount_libc(Source, Target, Fs, Flags, Options).
 
 unshare(Flags) ->
-    posix:syscall_libc(linux:sys_unshare(), Flags).
+    posix:unshare_libc(Flags).
 
 %% Equivalent of ->  mount --make-rprivate /
 %% Prevent mounts in the container from leaking to the parent
