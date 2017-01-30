@@ -33,9 +33,12 @@ start_container(Name, Tag, Command, Args, Options) ->
     lager:info("UserId : ~p  & GroupId: ~p", [UserId, GroupId]),
     ResMountPropogation = set_mount_propogation(),
     lager:info("set_mount_propogation result: ~p", [ResMountPropogation]),
-    ResUnshare= unshare(linux:clone_newpid() bor linux:clone_newnet() bor 
-                            linux:clone_newns() bor linux:clone_newuts() bor linux:clone_newcgroup() bor 
-                            linux:clone_newipc() bor linux:clone_newuser()),
+    ResUnshare= unshare(linux:clone_newpid() 
+                            bor linux:clone_newnet() 
+                            bor linux:clone_newns() 
+                            bor linux:clone_newuts() 
+                            bor linux:clone_newcgroup() 
+                            bor linux:clone_newipc()),                            
     lager:info("unshare syscall result: ~p", [ResUnshare]),
     setgroups_write(undefined),
     map_user(0, UserId, 1, undefined),
@@ -56,7 +59,10 @@ wait_and_do_task(PID, Rootfs, Command, Args) ->
     do_task(Rootfs, Command, Args).
     
 do_task(Rootfs, Command, Args) ->
+    lager:info("filesystem build is starting"),
     setup_fs(Rootfs),
+    lager:info("filesystem build is completed"),
+    lager:info("task execution is starting"),
     posix:exec_libc(Command, Args).
     
 pull(Name, Tag) ->
@@ -93,10 +99,11 @@ container_dir_name(Name) ->
 
 b_root_overlay(ImageDir, ContainerDir, Rootfs) ->
     lager:info("building overlayfs for container"),
-    OverlayMountpoint = mount_image_overlay(ImageDir, ContainerDir, Rootfs),
+    OverlayMountResult = mount_image_overlay(ImageDir, ContainerDir, Rootfs),
     OverlayPid = posix:fork_libc(),
     if 
-        OverlayPid =/= 0 -> prep_root_overlay(OverlayPid, OverlayMountpoint)
+        OverlayPid =/= 0 -> prep_root_overlay(OverlayPid, Rootfs);
+        true -> lager:info("child is done")
     end.
 
 prep_root_overlay(OverlayPid, OverlayMountpoint) ->
@@ -108,18 +115,18 @@ b_root_copy_base_image(ImageDir, Rootfs) ->
     os:cmd("cp -R " ++ ImageDir ++ " " ++ Rootfs).
 
 mount_image_overlay(ImageDir, ContainerDir, Rootfs) ->
-        Overlay = ContainerDir ++ "/overlay/",
-        WorkDir = ContainerDir ++ "/overlay.work/",
-        lists:foreach(fun(X) -> filelib:ensure_dir(X) end,[Rootfs, Overlay, WorkDir]),
-        FsOptions = "lowerdir=" ++ ImageDir ++",upperdir="++ Overlay++ ",workdir=" ++ WorkDir,
-        mount("none", Rootfs, "overlay", linux:ms_mgc_val(), FsOptions).
+    Overlay = ContainerDir ++ "/overlay/",
+    WorkDir = ContainerDir ++ "/overlay.work/",
+    lists:foreach(fun(X) -> filelib:ensure_dir(X) end,[Rootfs, Overlay, WorkDir]),
+    FsOptions = "lowerdir=" ++ ImageDir ++",upperdir="++ Overlay++ ",workdir=" ++ WorkDir,
+    mount("none", Rootfs, "overlay", linux:ms_mgc_val(), FsOptions).
 
 
 mount(Source, Target, Fs, Flags, Options) ->
     posix:mount_libc(Source, Target, Fs, Flags, Options).
 
 unshare(Flags) ->
-    posix:unshare_libc(Flags).
+    posix:syscall_libc(linux:sys_unshare(), Flags).
 
 %% Equivalent of ->  mount --make-rprivate /
 %% Prevent mounts in the container from leaking to the parent
@@ -178,12 +185,12 @@ pivot_root(Rootfs) ->
 
 bind_dev_nodes(OldRoot) ->
     Devices = [
-      'dev/tty',
-      'dev/null',
-      'dev/zero',
-      'dev/random',
-      'dev/urandom',
-      'dev/full'
+      "dev/tty",
+      "dev/null",
+      "dev/zero",
+      "dev/random",
+      "dev/urandom",
+      "dev/full"
      ],
     lists:foreach(fun(X) -> bind_device(X, OldRoot) end, Devices).
 
@@ -195,15 +202,17 @@ bind_device(Device, OldRoot) ->
         IsFile -> file:delete(NewDevice);
         true -> lager:debug("New device is not a file")
     end,
-    mount(HostDevice, NewDevice, 'bind', linux:ms_bind(), ?NULL).
+    mount(HostDevice, NewDevice, "bind", linux:ms_bind(), ?NULL).
 
 symlink_many(Mapping) ->
     maps:fold(
       fun(K, V, ok) ->
-              os:cmd("ln -s " ++ K ++ " " ++ V)
+              R = K ++ " " ++ V,
+              os:cmd("ln -sf " ++ R)
       end, ok, Mapping).
 
 setup_fs(Rootfs) ->
+    lager:info("pivoting root: ~p", [Rootfs]),
     OldRoot = pivot_root(Rootfs),
 
     %% need to mount a /proc filesystem in the namespace, if not the tools like ps and top will read
@@ -222,6 +231,7 @@ setup_fs(Rootfs) ->
     Mapping = #{"/dev/pts/ptmx" => "/dev/ptmx", "/proc/self/fd" => "/dev/fd",
                 "/proc/self/fd/0" => "/dev/stdin", "/proc/self/fd/1" => "/dev/stdout",
                 "/proc/self/fd/2" => "/dev/stderr"},
+    lager:info("symlink mapping starting"),
     symlink_many(Mapping),
 
     % mount kernel /sys interface
