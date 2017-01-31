@@ -173,7 +173,7 @@ static ERL_NIF_TERM exec_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         return enif_make_badarg(env);
     }
 
-    int code = execl(command, command, args);
+    int code = execl(command, command, args, (char*) NULL);
     return enif_make_int(env, code);
 }
 

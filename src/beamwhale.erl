@@ -16,6 +16,7 @@
 %% enable_overlay  -- uses overlayfs to build rootfs
 start_container(Name, Tag, Command, Args, Options) ->
     {ok, ImageDir} = docker:pull(Name, Tag),
+    generate_dev_null_and_urandom(ImageDir),
     {Dirname, ContainerDir} = container_dir_name(Name),
     Rootfs = ContainerDir ++ "/root/",
     filelib:ensure_dir(Rootfs),
@@ -96,6 +97,12 @@ container_dir_name(Name) ->
     ReplacedName = re:replace(Name, "/","-",[global,{return,list}]),
     DirectoryName = ReplacedName ++ "-" ++ uuid:to_string(uuid:uuid4()),
     {DirectoryName, determine_beamwhale_dir() ++ "/containers/" ++ DirectoryName}.
+
+generate_dev_null_and_urandom(ImageDir) ->
+    os:cmd("mknod " ++ ImageDir ++ "dev/null c 1 3"),
+    os:cmd("mknod " ++ ImageDir ++ "dev/urandom c 1 9"),
+    os:cmd("chmod 666 " ++ ImageDir ++ "dev/null"),
+    os:cmd("chmod 666 " ++ ImageDir ++ "dev/urandom").
 
 b_root_overlay(ImageDir, ContainerDir, Rootfs) ->
     lager:info("building overlayfs for container"),
