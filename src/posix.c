@@ -4,7 +4,9 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/mount.h>
+#include <unistd.h>
 
 #define ROOT "root"
 #define MAXBUFLEN  1024
@@ -45,6 +47,12 @@ static ERL_NIF_TERM syscall_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     enif_get_int(env, argv[0], &syscall_code);
     enif_get_int(env, argv[1], &flags);
     int r = syscall(syscall_code, flags);
+
+    if (r < 0 )
+    {
+        printf("Error on syscall_libc! %s\n", strerror(errno));
+    }
+    
     return enif_make_int(env, r);
 }
 
@@ -83,11 +91,11 @@ static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
         r = mount(source, target, fs, flags, options);
     }
     
-    if (r != 0)
+    if (r < 0 )
     {
-        printf("mount failed: %d", r);
-    }    
-    
+        printf("Error on mount_libc! Args: %s ---- %s Reason: %s\n", source, target, strerror(errno));
+    }
+
     return enif_make_int(env, r);
     
 }
@@ -96,12 +104,19 @@ static ERL_NIF_TERM mount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 static ERL_NIF_TERM umount_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     char mountpoint[MAXBUFLEN];
+    int flags;
     if (enif_get_string(env, argv[0], mountpoint, MAXBUFLEN, ERL_NIF_LATIN1) < 1)
     {
         return enif_make_badarg(env);
     }
+    enif_get_int(env, argv[1], &flags);
+    int code = umount2(mountpoint, flags);
     
-    int code = umount(mountpoint);
+    if (code < 0 )
+    {
+        printf("Error on umount_libc! %s\n", strerror(errno));
+    }
+    
     return enif_make_int(env, code);
 }
 
@@ -134,6 +149,12 @@ static ERL_NIF_TERM unshare_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     int flags;
     enif_get_int(env, argv[0], &flags);
     int code = unshare(flags);
+    
+    if (code < 0 )
+    {
+        printf("Error on unshare_libc! %s\n", strerror(errno));
+    }
+    
     return enif_make_int(env, code);
 }
 
@@ -174,6 +195,12 @@ static ERL_NIF_TERM exec_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     }
 
     int code = execl(command, command, args, (char*) NULL);
+
+    if (code < 0 )
+    {
+        printf("Error on exec_libc! %s\n", strerror(errno));
+    }
+    
     return enif_make_int(env, code);
 }
 
@@ -185,7 +212,35 @@ static ERL_NIF_TERM set_hostname(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     {
         return enif_make_badarg(env);
     }
-    int code = sethostname(hostname);
+    int code = sethostname(hostname, sizeof(hostname));
+    
+    if (code < 0 )
+    {
+        printf("Error on set_hostname! Hostname: %s Reason: %s\n", hostname,  strerror(errno));
+    }
+    
+    return enif_make_int(env, code);
+}
+
+static ERL_NIF_TERM symlink_libc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    char path1[MAXBUFLEN];
+    char path2[MAXBUFLEN];
+    if (enif_get_string(env, argv[0], path1, MAXBUFLEN, ERL_NIF_LATIN1) < 1)
+    {
+        return enif_make_badarg(env);
+    }
+    if (enif_get_string(env, argv[1], path2, MAXBUFLEN, ERL_NIF_LATIN1) < 1)
+    {
+        return enif_make_badarg(env);
+    }
+    
+    int code = symlink(path1, path2);
+    if (code < 0 )
+    {
+        printf("Error on symlink_libc! %s\n", strerror(errno));
+    }
+    
     return enif_make_int(env, code);
 }
 
@@ -195,7 +250,7 @@ static ErlNifFunc nif_funcs[] =
     {"get_user", 0, get_user},
     {"get_group_id", 0, get_group_id},
     {"mount_libc", 5, mount_libc},
-    {"umount_libc", 1, umount_libc},
+    {"umount_libc", 2, umount_libc},
     {"fork_libc", 0, fork_libc},
     {"waitpid_libc", 2, waitpid_libc},
     {"exit_libc", 1, exit_libc},
@@ -204,7 +259,8 @@ static ErlNifFunc nif_funcs[] =
     {"get_pid", 0, get_pid},
     {"pivot", 2, pivot},
     {"exec_libc", 2, exec_libc},
-    {"set_hostname", 1, set_hostname}
+    {"set_hostname", 1, set_hostname},
+    {"symlink_libc", 2, symlink_libc},
 };
 
 ERL_NIF_INIT(posix,nif_funcs,NULL,NULL,NULL,NULL)

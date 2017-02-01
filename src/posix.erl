@@ -1,11 +1,11 @@
 -module(posix).
 -on_load(load_posix/0).
 
--export([get_user/0, mount_libc/5, umount_libc/1,
+-export([get_user/0, mount_libc/5, umount_libc/2,
          fork_libc/0, waitpid_libc/2, exit_libc/1,
         get_pid/0, set_hostname/1, get_group_id/0,
         syscall_libc/2, pivot/2, exec_libc/2,
-         unshare_libc/1]).
+         unshare_libc/1, symlink_libc/2]).
 
 get_pid() ->
     "NIF library posix not loaded".
@@ -22,7 +22,7 @@ set_hostname(Name) ->
 mount_libc(Source, Target, Fs, Flags, Options) ->
     "NIF library posix not loaded".
 
-umount_libc(Mountpoint) ->
+umount_libc(Mountpoint, Flags) ->
     "NIF library posix not loaded".
 
 fork_libc() ->
@@ -44,6 +44,9 @@ exec_libc(Command, Args) ->
     "NIF library posix not loaded".
 
 unshare_libc(Flags) ->
+    "NIF library posix not loaded".
+
+symlink_libc(X, Y) ->
     "NIF library posix not loaded".
 
 load_posix() ->
