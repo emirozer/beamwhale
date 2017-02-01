@@ -37,10 +37,12 @@ docs:
 test: 
 	@$(REBAR3) do ct, cover
 
-shell: 
+shell: c_compile
 	@$(REBAR3) shell
 
 release: test
 	@$(REBAR3) release
 
+c_compile:
+	gcc -fPIC -fpermissive -shared -o src/posix.so src/posix.c -I $ERL_ROOT/usr/include/
 
