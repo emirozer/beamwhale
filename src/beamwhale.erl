@@ -57,17 +57,6 @@ start_container(Name, Tag, Command, Args, Options) ->
 start_container(Name, Command, Args, Options) ->
     start_container(Name, "latest", Command, Args, Options).
 
-wait_and_do_task(PID, Rootfs, Command, Args) ->
-    posix:waitpid_libc(PID, 0),
-    do_task(Rootfs, Command, Args).
-
-do_task(Rootfs, Command, Args) ->
-    lager:info("filesystem build is starting"),
-    setup_fs(Rootfs),
-    lager:info("filesystem build is completed"),
-    lager:info("task execution is starting"),
-    posix:exec_libc(Command, Args).
-
 pull(Name, Tag) ->
     docker:pull(Name, Tag).
 
@@ -90,6 +79,17 @@ determine_beamwhale_dir() ->
         true ->
             "/home/" ++ CurrentUser ++ "/.beamwhale"
     end.
+
+wait_and_do_task(PID, Rootfs, Command, Args) ->
+    posix:waitpid_libc(PID, 0),
+    do_task(Rootfs, Command, Args).
+
+do_task(Rootfs, Command, Args) ->
+    lager:info("filesystem build is starting"),
+    setup_fs(Rootfs),
+    lager:info("filesystem build is completed"),
+    lager:info("task execution is starting"),
+    posix:exec_libc(Command, Args).
 
 make_beamwhale() ->
     file:make_dir(determine_beamwhale_dir()),
