@@ -34,7 +34,7 @@ Clone the repository and ``sudo make shell``
 
 > (any available library on docker public registry)
 
-[![asciicast](https://asciinema.org/a/101686.png)](https://asciinema.org/a/101686)
+![Demo](https://raw.github.com/emirozer/beamwhale/master/docs/get_tags.gif)
 
 
 > pull the container image with the tag you would like
@@ -43,7 +43,7 @@ Clone the repository and ``sudo make shell``
 
 > in that case it will default to latest tag
 
-[![asciicast](https://asciinema.org/a/101687.png)](https://asciinema.org/a/101687)
+![Demo](https://raw.github.com/emirozer/beamwhale/master/docs/pull.gif)
 
 
 > create and run a command in a container
@@ -53,4 +53,4 @@ Clone the repository and ``sudo make shell``
 > beamwhale:start_container(ImageName, Tag, Command, Args, Options)  options can be ommitted, there is a single option now and it is enable_overlay atom
 
 
-[![asciicast](https://asciinema.org/a/101890.png)](https://asciinema.org/a/101890)
+![Demo](https://raw.github.com/emirozer/beamwhale/master/docs/start_container.gif)
