@@ -1,5 +1,7 @@
 #### About & Why
 ==============
+**warning: experimental software**
+
 Beamwhale is an erlang library to replicate what docker does at a tiny scale.
 My goal for this project was to be able to list available tags for an image.
 Pull image to a local repository. And use the image to create an isolated resource (container)
@@ -18,7 +20,7 @@ One simple example is that the unshare call (<http://man7.org/linux/man-pages/ma
 
 > (any available library on docker public registry)
 
-[![asciicast](https://asciinema.org/a/91e1psjachs5vd48qsep68jev.png)](https://asciinema.org/a/91e1psjachs5vd48qsep68jev)
+[![asciicast](https://asciinema.org/a/101686.png)](https://asciinema.org/a/101686)
 
 
 > pull the container image with the tag you would like
@@ -27,12 +29,14 @@ One simple example is that the unshare call (<http://man7.org/linux/man-pages/ma
 
 > in that case it will default to latest tag
 
-[![asciicast](https://asciinema.org/a/clhrxyetoaqetr97f24y9qwxz.png)](https://asciinema.org/a/clhrxyetoaqetr97f24y9qwxz)
-
+[![asciicast](https://asciinema.org/a/101687.png)](https://asciinema.org/a/101687)
 
 
 > create and run a command in a container
 
-> with the image you would choose
+> with the image you would choose (it pulls and sets it up for you)
 
-#### to be populated
+> beamwhale:start_container(ImageName, Tag, Command, Args, Options)  options can be ommitted, there is a single option now and it is enable_overlay atom
+
+
+[![asciicast](https://asciinema.org/a/101890.png)](https://asciinema.org/a/101890)
